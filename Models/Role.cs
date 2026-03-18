@@ -17,15 +17,15 @@ namespace Lab1.Models
         [Display(Name = "Имя персонажа")]
         public string CharacterName { get; set; } = string.Empty;
 
-        // Внешний ключ на фильм
+        // Внешний ключ
         [Display(Name = "ID фильма")]
         public int MovieId { get; set; }
 
-        // Внешний ключ на актера
+        // Внешний ключ
         [Display(Name = "ID актера")]
         public int ActorId { get; set; }
 
-        // Навигационные свойства
+        // Навигация
         public virtual Movie? Movie { get; set; }
         public virtual Actor? Actor { get; set; }
 

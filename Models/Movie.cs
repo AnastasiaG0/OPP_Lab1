@@ -28,24 +28,21 @@ namespace Lab1.Models
         [Display(Name = "Длительность (мин)")]
         public int DurationMinutes { get; set; }
 
-        // Возрастное ограничение
         [Required(ErrorMessage = "Возрастное ограничение обязательно")]
         [Display(Name = "Возрастное ограничение")]
         public AgeRating AgeRating { get; set; }
 
-        // Страна производства
         [Required(ErrorMessage = "Страна производства обязательна")]
         [MaxLength(100, ErrorMessage = "Название страны не может превышать 100 символов")]
         [Display(Name = "Страна производства")]
         public string Country { get; set; } = string.Empty;
 
-        // Описание фильма
         [MaxLength(2000, ErrorMessage = "Описание не может превышать 2000 символов")]
         [DataType(DataType.MultilineText)]
         [Display(Name = "Описание фильма")]
         public string? Description { get; set; }
 
-        // Внешний ключ на режиссера
+        // Внешний ключ
         [Display(Name = "Режиссер")]
         public int DirectorId { get; set; }
 
@@ -55,9 +52,7 @@ namespace Lab1.Models
         public virtual ICollection<MovieGenre> MovieGenres { get; set; } = new List<MovieGenre>();
 
         // Отображение информации о фильме
-        [Display(Name = "Часы")]
         public int Hours => DurationMinutes / 60;
-        [Display(Name = "Минуты")]
         public int Minutes => DurationMinutes % 60;
         public string FormattedDuration => Hours > 0
             ? $"{Hours} ч {Minutes:00} мин"

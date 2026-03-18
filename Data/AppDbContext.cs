@@ -39,7 +39,6 @@ namespace Lab1.Data
 
                 var connectionString = configuration.GetConnectionString("DefaultConnection");
                 optionsBuilder.UseSqlite(connectionString);
-                //optionsBuilder.LogTo(Console.WriteLine, LogLevel.Information);
             }
         }
 
@@ -112,9 +111,6 @@ namespace Lab1.Data
                 .HasIndex(g => g.Name)
                 .IsUnique()
                 .HasDatabaseName("IX_Genre_Name");
-
-            // Сидирование данных
-            //SeedData(modelBuilder);
         }
 
         public async Task InitializeDatabaseAsync()

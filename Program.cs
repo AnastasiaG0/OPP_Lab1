@@ -1,5 +1,4 @@
-﻿//using Azure;
-using Lab1.Data;
+﻿using Lab1.Data;
 using Lab1.Models;
 using Microsoft.EntityFrameworkCore;
 using System.ComponentModel.Design;
@@ -15,7 +14,6 @@ class Program
     private static List<Actor> _selectedActors = new();
     private static List<Role> _selectedRoles = new();
     private static List<Genre> _selectedGenres = new();
-    private static bool _directorConfirmed = false;
     private static bool _movieInfoFilled = false;
     private static bool _ageRatingFilled = false;
     private static bool _countryFilled = false;
@@ -32,29 +30,12 @@ class Program
             {
                 // Применяем миграции
                 await context.Database.MigrateAsync();
-                //Console.WriteLine("✓ Миграции применены");
 
                 // Добавляем или обновляем жанры
                 await SyncGenresAsync(context);
-                // Инициализируем базу данных начальными данными
-                await context.InitializeDatabaseAsync();////////////////////////////////////
 
-                // Показываем все жанры
-                /*var genresCount = await context.Genres.CountAsync();
-                Console.WriteLine($"\nВсего жанров в БД: {genresCount}");
-
-                var allGenres = await context.Genres
-                    .Include(g => g.MovieGenres)
-                    .OrderBy(g => g.Id)
-                    .ToListAsync();
-
-                foreach (var g in allGenres)
-                {
-                    int moviesCount = g.MovieGenres?.Count ?? 0;
-                    Console.WriteLine($"   [{g.Id}] {g.Name} - фильмов: {moviesCount}");
-                }
-
-                Console.WriteLine();*/
+                // Сидирование
+                await context.InitializeDatabaseAsync();
             }
             catch (Exception ex)
             {
@@ -138,13 +119,6 @@ class Program
             }
         }
     }
-
-    /*private static async Task SeedPredefinedGenresAsync(AppDbContext context)
-    {
-        await context.Genres.AddRangeAsync(PredefinedGenres.All);
-        await context.SaveChangesAsync();
-        Console.WriteLine("✅ Предопределенные жанры успешно добавлены в базу данных.");
-    }*/
 
     // ==================== МЕТОДЫ ОТОБРАЖЕНИЯ ====================
 
@@ -269,7 +243,6 @@ class Program
             {
                 var movieTitles = director.Movies?.Select(m => m.Title);
                 Console.WriteLine($"   🎬 Последние фильмы: {string.Join(", ", movieTitles ?? new List<string>())}");
-                //if (moviesCount > 3) Console.WriteLine($"      ... и ещё {moviesCount - 3}");
             }
             Console.WriteLine($"{"-".PadRight(80, '-')}");
         }
@@ -314,7 +287,6 @@ class Program
                 if (movies?.Any() == true)
                 {
                     Console.WriteLine($"   🎭 Роли: \n{string.Join("", movies)}");
-                    //if (rolesCount > 3) Console.WriteLine($"      ... и ещё {rolesCount - 3}");
                 }
             }
             Console.WriteLine($"{"-".PadRight(59, '-')}");
@@ -323,69 +295,12 @@ class Program
         Console.WriteLine($"\n   Всего актеров: {actors.Count}");
     }
 
-    /*private static async Task SyncGenresAsync(AppDbContext context)
-    {
-        var dbGenres = await context.Genres.ToDictionaryAsync(g => g.Id);
-        var predefinedGenres = PredefinedGenres.All.ToDictionary(g => g.Id);
-
-        // 1. Удаляем жанры, которых нет в PredefinedGenres и которые не используются
-        foreach (var dbGenre in dbGenres.Values.ToList()) // ToList() важно, чтобы не изменять коллекцию во время итерации
-        {
-            if (!predefinedGenres.ContainsKey(dbGenre.Id))
-            {
-                var isGenreUsed = await context.MovieGenres
-                    .AnyAsync(mg => mg.GenreId == dbGenre.Id);
-
-                if (isGenreUsed)
-                {
-                    Console.WriteLine($"⚠ Жанр '{dbGenre.Name}' (Id={dbGenre.Id}) используется в фильмах и НЕ МОЖЕТ быть удалён");
-                }
-                else
-                {
-                    context.Genres.Remove(dbGenre);
-                    Console.WriteLine($"➖ Удалён неиспользуемый жанр: {dbGenre.Name} (Id={dbGenre.Id})");
-                }
-            }
-        }
-
-        // 2. Добавляем новые жанры
-        foreach (var kvp in predefinedGenres)
-        {
-            if (!dbGenres.ContainsKey(kvp.Key))
-            {
-                await context.Genres.AddAsync(new Genre
-                {
-                    Id = kvp.Key,
-                    Name = kvp.Value.Name,
-                    Description = kvp.Value.Description
-                });
-                Console.WriteLine($"➕ Добавлен новый жанр: {kvp.Value.Name}");
-            }
-            else
-            {
-                // 3. Обновляем существующие (на случай, если изменили название или описание)
-                var existingGenre = dbGenres[kvp.Key];
-                if (existingGenre.Name != kvp.Value.Name ||
-                    existingGenre.Description != kvp.Value.Description)
-                {
-                    existingGenre.Name = kvp.Value.Name;
-                    existingGenre.Description = kvp.Value.Description;
-                    context.Genres.Update(existingGenre);
-                    Console.WriteLine($"🔄 Обновлён жанр: {kvp.Value.Name}");
-                }
-            }
-        }
-
-        // Сохраняем все изменения
-        await context.SaveChangesAsync();
-    }*/
-
     private static async Task SyncGenresAsync(AppDbContext context)
     {
         var dbGenres = await context.Genres.ToDictionaryAsync(g => g.Id);
         var predefinedGenres = PredefinedGenres.All.ToDictionary(g => g.Id);
 
-        // 1. Добавляем новые жанры
+        // Добавляем новые жанры
         foreach (var kvp in predefinedGenres)
         {
             if (!dbGenres.ContainsKey(kvp.Key))
@@ -396,7 +311,6 @@ class Program
                     Name = kvp.Value.Name,
                     Description = kvp.Value.Description
                 });
-                //Console.WriteLine($"➕ Добавлен новый жанр: {kvp.Value.Name}");
             }
             else
             {
@@ -408,12 +322,11 @@ class Program
                     existingGenre.Name = kvp.Value.Name;
                     existingGenre.Description = kvp.Value.Description;
                     context.Genres.Update(existingGenre);
-                    Console.WriteLine($"🔄 Обновлён жанр: {kvp.Value.Name}");
                 }
             }
         }
 
-        // 2. Удаляем неиспользуемые жанры
+        // Удаляем неиспользуемые жанры
         foreach (var dbGenre in dbGenres.Values)
         {
             if (!predefinedGenres.ContainsKey(dbGenre.Id))
@@ -423,7 +336,7 @@ class Program
 
                 if (isGenreUsed)
                 {
-                    Console.WriteLine($"⚠ Жанр '{dbGenre.Name}' (Id={dbGenre.Id}) используется в фильмах и НЕ МОЖЕТ быть удалён");
+                    Console.WriteLine($"⚠ Жанр '{dbGenre.Name}' (Id={dbGenre.Id}) используется в фильмах и не может быть удалён");
                 }
                 else
                 {
@@ -435,97 +348,6 @@ class Program
 
         await context.SaveChangesAsync();
     }
-
-    /*private static async Task InitializeDatabaseAsync(AppDbContext context)
-    {
-        // 1. Сначала синхронизируем жанры (они не зависят от других таблиц)
-        await SyncGenresAsync(context);
-
-        // 2. Проверяем, есть ли уже данные
-        if (await context.Directors.AnyAsync() || await context.Actors.AnyAsync())
-        {
-            Console.WriteLine("✓ В базе уже есть данные, пропускаем инициализацию");
-            return;
-        }
-
-        // 3. Добавляем режиссеров
-        var directors = new List<Director>
-        {
-            new Director { Id = 1, Name = "Кристофер Нолан", Age = 53, Awards = "Оскар, Золотой глобус, BAFTA" },
-            new Director { Id = 2, Name = "Гай Ричи", Age = 55, Awards = "Премия BAFTA" },
-            new Director { Id = 3, Name = "Квентин Тарантино", Age = 60, Awards = "Золотая пальмовая ветвь, Оскар" },
-            new Director { Id = 4, Name = "Стивен Спилберг", Age = 77, Awards = "Оскар, Золотой глобус, BAFTA" }
-        };
-        await context.Directors.AddRangeAsync(directors);
-        await context.SaveChangesAsync();
-
-        // 4. Добавляем актеров
-        var actors = new List<Actor>
-        {
-            new Actor { Id = 1, Name = "Леонардо ДиКаприо", BirthDate = new DateTime(1974, 11, 11), Country = "США" },
-            new Actor { Id = 2, Name = "Мэттью МакКонахи", BirthDate = new DateTime(1969, 11, 4), Country = "США" },
-            new Actor { Id = 3, Name = "Джейсон Стэйтем", BirthDate = new DateTime(1967, 7, 26), Country = "Великобритания" },
-            new Actor { Id = 4, Name = "Брэд Питт", BirthDate = new DateTime(1963, 12, 18), Country = "США" },
-            new Actor { Id = 5, Name = "Том Хэнкс", BirthDate = new DateTime(1956, 7, 9), Country = "США" }
-        };
-        await context.Actors.AddRangeAsync(actors);
-        await context.SaveChangesAsync();
-
-        // 5. Добавляем фильмы (уже есть DirectorId)
-        var movies = new List<Movie>
-        {
-            new Movie { Id = 1, Title = "Интерстеллар", Year = 2014, DurationMinutes = 169, AgeRating = AgeRating.TwelvePlus, Country = "США, Великобритания", DirectorId = 1 },
-            new Movie { Id = 2, Title = "Начало", Year = 2010, DurationMinutes = 148, AgeRating = AgeRating.TwelvePlus, Country = "США, Великобритания", DirectorId = 1 },
-            new Movie { Id = 3, Title = "Большой куш", Year = 2000, DurationMinutes = 104, AgeRating = AgeRating.SixteenPlus, Country = "Великобритания, США", DirectorId = 2 },
-            new Movie { Id = 4, Title = "Джентльмены", Year = 2019, DurationMinutes = 113, AgeRating = AgeRating.EighteenPlus, Country = "Великобритания, США", DirectorId = 2 },
-            new Movie { Id = 5, Title = "Криминальное чтиво", Year = 1994, DurationMinutes = 154, AgeRating = AgeRating.EighteenPlus, Country = "США", DirectorId = 3 },
-            new Movie { Id = 6, Title = "Однажды в Голливуде", Year = 2019, DurationMinutes = 161, AgeRating = AgeRating.SixteenPlus, Country = "США, Великобритания", DirectorId = 3 },
-            new Movie { Id = 7, Title = "Спасти рядового Райана", Year = 1998, DurationMinutes = 169, AgeRating = AgeRating.SixteenPlus, Country = "США", DirectorId = 4 }
-        };
-        await context.Movies.AddRangeAsync(movies);
-        await context.SaveChangesAsync();
-
-        // 6. Добавляем роли (уже есть MovieId и ActorId)
-        var roles = new List<Role>
-        {
-            new Role { Id = 1, CharacterName = "Купер", MovieId = 1, ActorId = 1 },
-            new Role { Id = 2, CharacterName = "Амелия Бранд", MovieId = 1, ActorId = 2 },
-            new Role { Id = 3, CharacterName = "Дом Кобб", MovieId = 2, ActorId = 1 },
-            new Role { Id = 4, CharacterName = "Турецкий", MovieId = 3, ActorId = 3 },
-            new Role { Id = 5, CharacterName = "Микки Пирсон", MovieId = 4, ActorId = 3 },
-            new Role { Id = 6, CharacterName = "Винсент Вега", MovieId = 5, ActorId = 1 },
-            new Role { Id = 7, CharacterName = "Джулс Виннфилд", MovieId = 5, ActorId = 4 },
-            new Role { Id = 8, CharacterName = "Рик Далтон", MovieId = 6, ActorId = 1 },
-            new Role { Id = 9, CharacterName = "Капитан Миллер", MovieId = 7, ActorId = 5 }
-        };
-        await context.Roles.AddRangeAsync(roles);
-        await context.SaveChangesAsync();
-
-        // 7. Добавляем связи с жанрами (жанры уже есть после SyncGenresAsync)
-        var movieGenres = new List<MovieGenre>
-        {
-            new MovieGenre { Id = 1, MovieId = 1, GenreId = 1 }, // Интерстеллар - Фантастика
-            new MovieGenre { Id = 2, MovieId = 1, GenreId = 3 }, // Интерстеллар - Драма
-            new MovieGenre { Id = 3, MovieId = 1, GenreId = 7 }, // Интерстеллар - Приключения
-            new MovieGenre { Id = 4, MovieId = 2, GenreId = 1 }, // Начало - Фантастика
-            new MovieGenre { Id = 5, MovieId = 2, GenreId = 6 }, // Начало - Триллер
-            new MovieGenre { Id = 6, MovieId = 3, GenreId = 2 }, // Большой куш - Боевик
-            new MovieGenre { Id = 7, MovieId = 3, GenreId = 4 }, // Большой куш - Комедия
-            new MovieGenre { Id = 8, MovieId = 3, GenreId = 5 }, // Большой куш - Криминал
-            new MovieGenre { Id = 9, MovieId = 4, GenreId = 2 }, // Джентльмены - Боевик
-            new MovieGenre { Id = 10, MovieId = 4, GenreId = 4 }, // Джентльмены - Комедия
-            new MovieGenre { Id = 11, MovieId = 4, GenreId = 5 }, // Джентльмены - Криминал
-            new MovieGenre { Id = 12, MovieId = 5, GenreId = 3 }, // Криминальное чтиво - Драма
-            new MovieGenre { Id = 13, MovieId = 5, GenreId = 5 }, // Криминальное чтиво - Криминал
-            new MovieGenre { Id = 14, MovieId = 6, GenreId = 3 }, // Однажды в Голливуде - Драма
-            new MovieGenre { Id = 15, MovieId = 6, GenreId = 4 }, // Однажды в Голливуде - Комедия
-            new MovieGenre { Id = 16, MovieId = 7, GenreId = 3 }, // Спасти рядового Райана - Драма
-            new MovieGenre { Id = 17, MovieId = 7, GenreId = 7 }, // Спасти рядового Райана - Приключения
-            new MovieGenre { Id = 18, MovieId = 7, GenreId = 2 }  // Спасти рядового Райана - Боевик
-        };
-        await context.MovieGenres.AddRangeAsync(movieGenres);
-        await context.SaveChangesAsync();
-    }*/
 
     private static async Task ShowMoviesByGenre()
     {
@@ -640,10 +462,7 @@ class Program
 
         while (true)
         {
-            //Console.WriteLine($"\n{"-".PadRight(50, '-')}");
             Console.WriteLine("ЗАПОЛНЕНИЕ ИНФОРМАЦИИ О ФИЛЬМЕ:");
-            //Console.WriteLine($"{"-".PadRight(50, '-')}");
-
             if (!_movieInfoFilled) Console.WriteLine("1. Заполнить основную информацию");
             if (_tempDirector == null) Console.WriteLine("2. Заполнить поле 'Режиссер'");
             if (!_ageRatingFilled) Console.WriteLine("3. Заполнить поле 'Возрастное ограничение'");
@@ -734,7 +553,6 @@ class Program
         _selectedActors.Clear();
         _selectedRoles.Clear();
         _selectedGenres.Clear();
-        _directorConfirmed = false;
         _movieInfoFilled = false;
         _ageRatingFilled = false;
         _countryFilled = false;
@@ -770,16 +588,6 @@ class Program
         }
         movie.DurationMinutes = duration;
 
-        /*if (hours == 0 && minutes == 0)
-        {
-            Console.WriteLine("❌ Длительность должна быть больше 0. Установлено значение по умолчанию: 90 мин");
-            movie.DurationMinutes = 90;
-        }
-        else
-        {
-            movie.DurationMinutes = hours * 60 + minutes;
-        }*/
-
         _movieInfoFilled = true;
         Console.WriteLine("✅ Основная информация заполнена\n");
     }
@@ -790,7 +598,6 @@ class Program
 
         Console.WriteLine("\n----- ДОБАВЛЕНИЕ ИНФОРМАЦИИ О РЕЖИССЕРЕ -----");
 
-        // Показываем существующих режиссеров
         var directors = await context.Directors.OrderBy(d => d.Name).ToListAsync();
         if (directors.Any())
         {
@@ -942,14 +749,12 @@ class Program
         Console.WriteLine("\n----- ВЫБОР ЖАНРОВ ФИЛЬМА -----");
         Console.WriteLine("Доступные жанры:");
 
-        // Показываем уже выбранные жанры
         if (_selectedGenres.Any())
         {
             Console.WriteLine($"\n✅ Уже выбрано: {string.Join(", ", _selectedGenres.Select(g => g.Name))}");
             Console.WriteLine();
         }
 
-        // Показываем все доступные жанры
         foreach (var genre in genres)
         {
             string selected = _selectedGenres.Any(g => g.Id == genre.Id) ? "✓ " : "  ";
@@ -1008,7 +813,7 @@ class Program
             return true;
         }
 
-        // Проверяем, выбран ли хотя бы один жанр
+        // Выбран ли хотя бы один жанр
         if (_selectedGenres.Count == 0)
         {
             Console.WriteLine("❌ Нужно выбрать хотя бы один жанр\n");
@@ -1033,7 +838,7 @@ class Program
         if (choice == "1")
         {
             await AddActorAndRole();
-            return true; // Продолжаем добавление
+            return true;
         }
 
         if (_selectedActors.Count == 0)
@@ -1043,7 +848,7 @@ class Program
         }
 
         Console.WriteLine($"\n✅ Добавлено актеров: {_selectedActors.Count}\n");
-        return false; // Заканчиваем добавление
+        return false;
     }
 
     private static async Task AddActorAndRole()
@@ -1052,7 +857,6 @@ class Program
 
         Console.WriteLine("\n----- ДОБАВЛЕНИЕ АКТЕРА -----");
 
-        // Показываем существующих актеров
         var actors = await context.Actors.OrderBy(a => a.Name).ToListAsync();
         if (actors.Any())
         {
@@ -1061,8 +865,6 @@ class Program
             {
                 Console.WriteLine($"   [{a.Id}] {a.Name} ({a.Country}), {a.Age} лет");
             }
-            /*if (actors.Count > 5)
-                Console.WriteLine($"   ... и ещё {actors.Count - 5} актеров");*/
         }
 
         Console.WriteLine("\nВыберите действие:");
@@ -1098,7 +900,6 @@ class Program
 
         if (selectedActor == null) return;
 
-        // Добавляем роль для актера
         Console.WriteLine($"\n----- ДОБАВЛЕНИЕ РОЛИ ДЛЯ {selectedActor.Name.ToUpper()} -----");
 
         Console.Write("Введите имя персонажа: ");
@@ -1110,7 +911,7 @@ class Program
             characterName = Console.ReadLine()?.Trim();
         }
 
-        // Проверяем, не добавлен ли уже этот актер
+        // Не добавлен ли уже этот актер
         if (_selectedActors.Any(a => a.Id == selectedActor.Id))
         {
             Console.WriteLine("❌ Этот актер уже добавлен в фильм\n");
@@ -1164,7 +965,7 @@ class Program
 
         using var context = new AppDbContext();
 
-        // Проверяем, есть ли уже такой актер
+        // Есть ли уже такой актер
         var existingActor = await context.Actors
             .FirstOrDefaultAsync(a => a.Name == actor.Name &&
                                      a.BirthDate == actor.BirthDate &&
@@ -1222,7 +1023,7 @@ class Program
 
     private static async Task<bool> ConfirmAndSaveMovie(Movie movie)
     {
-        // Проверяем, все ли обязательные поля заполнены
+        // Все ли обязательные поля заполнены
         if (string.IsNullOrWhiteSpace(movie.Title) || movie.Year == 0 ||
             movie.DurationMinutes == 0 || _tempDirector == null ||
             string.IsNullOrWhiteSpace(movie.Country) || _selectedGenres.Count == 0 ||
@@ -1251,8 +1052,6 @@ class Program
 
         Console.WriteLine($"\n🎬 РЕЖИССЕР:");
         Console.WriteLine($"   {_tempDirector.Name} ({_tempDirector.Age} лет)");
-        /*if (!string.IsNullOrEmpty(_tempDirector.Awards))
-            Console.WriteLine($"   Награды: {_tempDirector.Awards}");*/
 
         Console.WriteLine($"\n📚 ЖАНРЫ:");
         foreach (var genre in _selectedGenres)
@@ -1270,10 +1069,6 @@ class Program
         foreach (var role in _selectedRoles)
         {
             Console.WriteLine($"   • {role.Actor?.Name} — {role.CharacterName}");
-            /*if (role.Actor != null)
-            {
-                Console.WriteLine($"     ({role.Actor.Country}, {role.Actor.Age} лет)");
-            }*/
         }
 
         Console.WriteLine("\n" + "=".PadRight(99, '='));
@@ -1291,19 +1086,19 @@ class Program
 
         try
         {
-            // 1. Добавляем фильм
+            // Добавляем фильм
             movie.DirectorId = _tempDirector.Id;
             await context.Movies.AddAsync(movie);
             await context.SaveChangesAsync(); // Сохраняем, чтобы получить ID фильма
 
-            // 2. Получаем максимальный существующий Id для MovieGenre
+            // Получаем максимальный существующий Id для MovieGenre
             int maxMovieGenreId = 0;
             if (await context.MovieGenres.AnyAsync())
             {
                 maxMovieGenreId = await context.MovieGenres.MaxAsync(mg => mg.Id);
             }
 
-            // 3. Добавляем связи с жанрами (с явным указанием Id)
+            // Добавляем связи с жанрами
             int nextId = maxMovieGenreId + 1;
             foreach (var genre in _selectedGenres)
             {
@@ -1315,7 +1110,7 @@ class Program
                 {
                     var movieGenre = new MovieGenre
                     {
-                        Id = nextId++, // Явно указываем Id
+                        Id = nextId++,
                         MovieId = movie.Id,
                         GenreId = genre.Id
                     };
@@ -1323,14 +1118,14 @@ class Program
                 }
             }
 
-            // 4. Получаем максимальный существующий Id для Role
+            // Получаем максимальный существующий Id для роли
             int maxRoleId = 0;
             if (await context.Roles.AnyAsync())
             {
                 maxRoleId = await context.Roles.MaxAsync(r => r.Id);
             }
 
-            // 5. Добавляем роли (с явным указанием Id)
+            // Добавляем роли
             nextId = maxRoleId + 1;
             foreach (var role in _selectedRoles)
             {
@@ -1342,7 +1137,7 @@ class Program
                 {
                     var newRole = new Role
                     {
-                        Id = nextId++, // Явно указываем Id
+                        Id = nextId++,
                         CharacterName = role.CharacterName,
                         MovieId = movie.Id,
                         ActorId = role.ActorId
@@ -1351,18 +1146,17 @@ class Program
                 }
             }
 
-            // 6. Сохраняем все связи
+            // Сохраняем все связи
             await context.SaveChangesAsync();
 
-            // 7. ПОДТВЕРЖДАЕМ ТРАНЗАКЦИЮ
+            // Подтверждение транзакции
             await transaction.CommitAsync();
 
-            Console.WriteLine("\n✅ Фильм успешно добавлен в базу данных!\n");
             return true;
         }
         catch (Exception ex)
         {
-            // ОТКАТ ТРАНЗАКЦИИ В СЛУЧАЕ ОШИБКИ
+            // Откат транзакции в случае ошибки
             await transaction.RollbackAsync();
 
             Console.WriteLine($"\n❌ Ошибка при сохранении: {ex.Message}");
@@ -1400,7 +1194,6 @@ class Program
         Console.WriteLine("\nДоступные фильмы:");
         foreach (var m in movies)
         {
-            //Console.WriteLine($"   [{m.Id}] {m.Title} ({m.Year}) - {m.Director?.Name ?? "Неизвестен"}");
             string genres = m.MovieGenres != null && m.MovieGenres.Any()
                 ? $" - Жанры: {string.Join(", ", m.MovieGenres.Select(mg => mg.Genre?.Name))}"
                 : "";
@@ -1428,94 +1221,9 @@ class Program
             return;
         }
 
-        /*Console.WriteLine($"\nРедактирование фильма: {movie.Title} ({movie.Year})");
-        Console.WriteLine("(Оставьте поле пустым, чтобы оставить без изменений)");
-
-        // Название
-        Console.Write($"\nИзмененное название [{movie.Title}]: ");
-        var title = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrEmpty(title))
-        {
-            movie.Title = title;
-        }
-
-        // Год
-        Console.Write($"Измененный год [{movie.Year}]: ");
-        var yearStr = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrEmpty(yearStr) && int.TryParse(yearStr, out int year))
-        {
-            movie.Year = year;
-        }
-
-        // Страна
-        Console.Write($"Измененная страна [{movie.Country}]: ");
-        var country = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrEmpty(country))
-        {
-            movie.Country = country;
-        }
-
-        // Длительность
-        Console.WriteLine($"\nТекущая длительность: {movie.FormattedDuration}");
-        Console.Write("Измененная длительность в минутах: ");
-        var durationStr = Console.ReadLine()?.Trim();
-
-        if (!string.IsNullOrEmpty(durationStr) && int.TryParse(durationStr, out int newDuration))
-        {
-            if (newDuration > 0)
-            {
-                movie.DurationMinutes = newDuration;
-                Console.WriteLine($"   Новая длительность: {movie.FormattedDuration}");
-            }
-            else
-            {
-                Console.WriteLine("❌ Длительность должна быть положительна, значение не изменено");
-            }
-        }
-
-        // Возрастное ограничение
-        Console.WriteLine($"\nТекущее возрастное ограничение: {movie.AgeRating.GetDisplayName()}");
-        Console.WriteLine("Доступные варианты:");
-        foreach (AgeRating rating in Enum.GetValues(typeof(AgeRating)))
-        {
-            Console.WriteLine($"   [{(int)rating}] {rating.GetDisplayName()}");
-        }
-        Console.Write("Введите номер измененного возрастного ограничения: ");
-        var ratingStr = Console.ReadLine()?.Trim();
-        if (!string.IsNullOrEmpty(ratingStr) && int.TryParse(ratingStr, out int ratingValue) &&
-            Enum.IsDefined(typeof(AgeRating), ratingValue))
-        {
-            movie.AgeRating = (AgeRating)ratingValue;
-        }
-
-        // Описание
-        Console.WriteLine($"\nТекущее описание:");
-        if (!string.IsNullOrEmpty(movie.Description))
-        {
-            PrintWrappedText(movie.Description, 3, 80);
-        }
-        else
-        {
-            Console.WriteLine("   Описание отсутствует");
-        }
-        Console.WriteLine("\nВведите новое описание (Enter чтобы оставить, 'DELETE' чтобы удалить):");
-        var description = Console.ReadLine();
-        if (description == "DELETE")
-        {
-            movie.Description = null;
-        }
-        else if (!string.IsNullOrEmpty(description))
-        {
-            movie.Description = description;
-        }
-
-        await context.SaveChangesAsync();
-        Console.WriteLine("\n✅ Информация о фильме успешно обновлена");*/
-
         bool exitEdit = false;
         while (!exitEdit)
         {
-            // Показываем текущую информацию о фильме
             Console.WriteLine($"\n{"-".PadRight(70, '-')}");
             Console.WriteLine($"ТЕКУЩАЯ ИНФОРМАЦИЯ О ФИЛЬМЕ:");
             Console.WriteLine($"{"-".PadRight(70, '-')}");
@@ -1526,7 +1234,6 @@ class Program
             Console.WriteLine($"   Возрастное ограничение: {movie.AgeRating.GetDisplayName()}");
             Console.WriteLine($"   Режиссер: {movie.Director?.Name ?? "Не выбран"}");
 
-            // Текущие жанры
             if (movie.MovieGenres != null && movie.MovieGenres.Any())
             {
                 var currentGenres = movie.MovieGenres.Select(mg => mg.Genre?.Name);
@@ -1720,10 +1427,6 @@ class Program
         {
             Console.WriteLine($"   [{a.Id}] {a.Name} ({a.Country}) - {a.Age} лет, ролей: {a.Roles?.Count ?? 0}");
         }
-        /*if (actors.Count > 10)
-        {
-            Console.WriteLine($"   ... и ещё {actors.Count - 10} актеров");
-        }*/
 
         Console.Write("\nВведите ID актера для редактирования: ");
         if (!int.TryParse(Console.ReadLine(), out int actorId))
@@ -1744,7 +1447,6 @@ class Program
         }
 
         Console.WriteLine($"\nРедактирование актера: {actor.Name}");
-        //Console.WriteLine("(Оставьте поле пустым, чтобы оставить без изменений)");
 
         bool exitActorEdit = false;
         while (!exitActorEdit)
@@ -1793,7 +1495,6 @@ class Program
         }
     }
 
-    // Метод для редактирования режиссера
     private static async Task EditMovieDirector(Movie movie, AppDbContext context)
     {
         Console.WriteLine("\n--- РЕДАКТИРОВАНИЕ РЕЖИССЕРА ---");
@@ -1801,7 +1502,6 @@ class Program
         bool exitDirectorEdit = false;
         while (!exitDirectorEdit)
         {
-            // Показываем текущего режиссера
             if (movie.Director != null)
             {
                 Console.WriteLine($"\nТекущий режиссер: {movie.Director.Name} ({movie.Director.Age} лет)");
@@ -1813,7 +1513,6 @@ class Program
                 Console.WriteLine("\n⚠ Режиссер не выбран\n");
             }
 
-            // Показываем всех доступных режиссеров
             var directors = await context.Directors.OrderBy(d => d.Name).ToListAsync();
             if (directors.Any())
             {
@@ -1886,7 +1585,6 @@ class Program
         }
     }
 
-    // Метод для редактирования жанров
     private static async Task EditMovieGenres(Movie movie, AppDbContext context)
     {
         Console.WriteLine("\n----- РЕДАКТИРОВАНИЕ ЖАНРОВ -----");
@@ -1894,7 +1592,6 @@ class Program
         bool exitGenreEdit = false;
         while (!exitGenreEdit)
         {
-            // Показываем текущие жанры
             if (movie.MovieGenres != null && movie.MovieGenres.Any())
             {
                 var currentGenres = movie.MovieGenres.Select(mg => mg.Genre?.Name);
@@ -1905,7 +1602,6 @@ class Program
                 Console.WriteLine("\n⚠ Жанры не выбраны");
             }
 
-            // Получаем все доступные жанры
             var allGenres = await context.Genres.OrderBy(g => g.Name).ToListAsync();
 
             Console.WriteLine("\nДоступные жанры:");
@@ -1942,7 +1638,6 @@ class Program
         }
     }
 
-    // Метод для редактирования актеров и ролей
     private static async Task ManageMovieActorsAndRoles(Movie movie, AppDbContext context)
     {
         bool exitActorManagement = false;
@@ -2002,7 +1697,6 @@ class Program
         }
     }
 
-    // Метод для редактирования персональных данных актера
     private static async Task EditActorPersonalData(Actor actor, AppDbContext context)
     {
         Console.WriteLine("\n--- РЕДАКТИРОВАНИЕ ПЕРСОНАЛЬНЫХ ДАННЫХ ---");
@@ -2033,7 +1727,6 @@ class Program
         Console.WriteLine("\n✅ Персональные данные актера успешно обновлены");
     }
 
-    // Метод для управления ролями актера
     private static async Task ManageActorRoles(Actor actor, AppDbContext context)
     {
         bool exitRoleManagement = false;
@@ -2084,7 +1777,6 @@ class Program
         }
     }
 
-    // Метод для добавления роли актеру
     private static async Task AddRoleToActor(Actor actor, AppDbContext context)
     {
         Console.WriteLine("\n--- ДОБАВЛЕНИЕ НОВОЙ РОЛИ ---");
@@ -2120,7 +1812,7 @@ class Program
             return;
         }
 
-        // Проверяем, есть ли уже у актера роль в этом фильме
+        // Есть ли уже у актера роль в этом фильме
         bool hasRole = actor.Roles?.Any(r => r.MovieId == movieId) ?? false;
         if (hasRole)
         {
@@ -2154,10 +1846,6 @@ class Program
         await context.Roles.AddAsync(newRole);
         await context.SaveChangesAsync();
 
-        // Обновляем навигационное свойство актера
-        /*actor.Roles ??= new List<Role>();
-        actor.Roles.Add(newRole);*/
-
         Console.WriteLine($"\n✅ Роль '{characterName}' в фильме \"{selectedMovie.Title}\" успешно добавлена актеру {actor.Name}");
 
         // После добавления роли, перезагружаем актера из БД, чтобы получить актуальный список ролей
@@ -2176,7 +1864,6 @@ class Program
         }
     }
 
-    // Метод для редактирования роли актера
     private static async Task EditActorRole(Actor actor, AppDbContext context)
     {
         if (actor.Roles == null || !actor.Roles.Any())
@@ -2217,7 +1904,6 @@ class Program
             selectedRole.CharacterName = newCharacterName;
         }
 
-        // Можно также изменить фильм для роли
         Console.Write("\nХотите изменить фильм для этой роли? (д/н): ");
         if (Console.ReadLine()?.ToLower() == "д")
         {
@@ -2250,17 +1936,16 @@ class Program
                 }
                 else
                 {
-                    Console.WriteLine("❌ Фильм не найден");
+                    Console.WriteLine("❌ Фильм не найден\n");
                 }
             }
         }
 
         await context.SaveChangesAsync();
-        Console.WriteLine("\n✅ Роль успешно обновлена");
+        Console.WriteLine("\n✅ Роль успешно обновлена\n");
     }
 
     // ==================== МЕТОДЫ УДАЛЕНИЯ ====================
-
     private static async Task DeleteMovie()
     {
         using var context = new AppDbContext();
@@ -2312,7 +1997,6 @@ class Program
         Console.WriteLine($"   Название: {movie.Title} ({movie.Year})");
         Console.WriteLine($"   Длительность: {movie.FormattedDuration}");
         Console.WriteLine($"   Будет удалено ролей: {movie.Roles?.Count ?? 0}");
-        Console.WriteLine($"   Будет удалено связей с жанрами: {movie.MovieGenres?.Count ?? 0}");
 
         Console.Write("\nПодтвердите удаление (д/н): ");
         if (Console.ReadLine()?.ToLower() != "д")
@@ -2326,7 +2010,6 @@ class Program
         Console.WriteLine($"\n✅ Фильм '{movie.Title}' успешно удален");
     }
 
-    // Метод для удаления роли актера
     private static async Task DeleteActorRole(Actor actor, AppDbContext context)
     {
         if (actor.Roles == null || !actor.Roles.Any())
@@ -2374,7 +2057,6 @@ class Program
     }
 
     // ==================== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ ====================
-
     private static async Task AddActorWithRoleToMovie(Movie movie, AppDbContext context)
     {
         Console.WriteLine("\n--- ДОБАВЛЕНИЕ АКТЕРА В ФИЛЬМ ---");
@@ -2624,26 +2306,25 @@ class Program
                     await context.MovieGenres.AddAsync(movieGenre);
                     await context.SaveChangesAsync();
 
-                    // Обновляем навигационное свойство
                     if (movie.MovieGenres == null)
                         movie.MovieGenres = new List<MovieGenre>();
                     movie.MovieGenres.Add(movieGenre);
 
-                    Console.WriteLine($"✅ Жанр '{genre.Name}' добавлен к фильму");
+                    Console.WriteLine($"✅ Жанр '{genre.Name}' добавлен к фильму\n");
                 }
                 else
                 {
-                    Console.WriteLine("❌ Этот жанр уже добавлен к фильму");
+                    Console.WriteLine("❌ Этот жанр уже добавлен к фильму\n");
                 }
             }
             else
             {
-                Console.WriteLine("❌ Жанр не найден");
+                Console.WriteLine("❌ Жанр не найден\n");
             }
         }
         else
         {
-            Console.WriteLine("❌ Неверный ID");
+            Console.WriteLine("❌ Неверный ID\n");
         }
     }
 
@@ -2786,6 +2467,7 @@ class Program
         }
     }
 
+    // Форматирование длинного текста
     private static void PrintWrappedText(string text, int indent = 0, int width = 70)
     {
         if (string.IsNullOrEmpty(text))

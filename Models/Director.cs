@@ -23,7 +23,7 @@ namespace Lab1.Models
 
         [MaxLength(500, ErrorMessage = "Описание наград не может превышать 500 символов")]
         [Display(Name = "Награды")]
-        public string? Awards { get; set; } // Награды (может быть null)
+        public string? Awards { get; set; }
 
         // Связь с фильмами
         public virtual ICollection<Movie> Movies { get; set; } = new List<Movie>();

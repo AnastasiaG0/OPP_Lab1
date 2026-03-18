@@ -12,13 +12,13 @@ namespace Lab1.Models
         [Key]
         public int Id { get; set; }
 
-        // Внешний ключ на фильм
+        // Внешний ключ
         public int MovieId { get; set; }
 
-        // Внешний ключ на жанр
+        // Внешний ключ
         public int GenreId { get; set; }
 
-        // Навигационные свойства
+        // Навигация
         public virtual Movie? Movie { get; set; }
         public virtual Genre? Genre { get; set; }
     }

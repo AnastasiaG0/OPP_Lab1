@@ -27,7 +27,6 @@ namespace Lab1.Models
         public override string ToString() => Name;
     }
 
-    // Выодим определённые жанры
     public static class PredefinedGenres
     {
         public static readonly List<Genre> All = new List<Genre>

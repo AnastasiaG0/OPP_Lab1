@@ -30,7 +30,6 @@ namespace Lab1.Models
         // Фильмы, где снимался актер
         public virtual ICollection<Role> Roles { get; set; } = new List<Role>();
 
-        // Отображение возраста
         public int Age => DateTime.Now.Year - BirthDate.Year;
 
         // Отображение полной информации
